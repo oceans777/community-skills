@@ -22,39 +22,10 @@ Extract key information from user request:
 - **Stack**: React, Vue, Next.js, or default to `html-tailwind`
 - **Existing design system**: component libraries, tokens, form wrappers, layout primitives, and project-specific UI conventions already in the codebase
 
-### Step 2: Search Relevant Domains
-
-Use `search.py` multiple times to gather comprehensive information. Search until you have enough context.
-
-```bash
-python scripts/search.py "<keyword>" --domain <domain> [-n <max_results>]
-```
-
-**Recommended search order:**
-
-1. **Product** - Get style recommendations for product type
-2. **Style** - Get detailed style guide (colors, effects, frameworks)
-3. **Typography** - Get font pairings with Google Fonts imports
-4. **Color** - Get color palette (Primary, Secondary, CTA, Background, Text, Border)
-5. **Landing** - Get page structure (if landing page)
-6. **Chart** - Get chart recommendations (if dashboard/analytics)
-7. **UX** - Get best practices and anti-patterns
-8. **Stack** - Get stack-specific guidelines (default: html-tailwind)
-
-### Step 3: Stack Guidelines (Default: infer-from-project)
-
-If user doesn't specify a stack, infer it from the project or default to `html-tailwind`.
-
-```bash
-python scripts/search.py "<keyword>" --stack html-tailwind
-```
-
-Available stacks: `html-tailwind`, `react`, `nextjs`, `vue`, `svelte`, `swiftui`, `react-native`, `flutter`
-
-### Step 4: Project Design System First
+### Step 2: Project Design System First
 
 When working inside an existing product, inspect and reuse the local design
-system before adding custom styles:
+system before searching for external style direction or adding custom styles:
 
 1. Search for existing components, wrappers, tokens, variants, and nearby usage.
 2. Prefer component props, size variants, semantic tokens, and layout primitives.
@@ -66,6 +37,37 @@ system before adding custom styles:
 
 If matching a product screenshot, first identify the closest existing component
 and state model. Treat one-off visual overrides as the last resort.
+
+Skip this step only for brand-new prototypes with no local UI conventions.
+
+### Step 3: Search Relevant Domains
+
+Use `search.py` multiple times to gather comprehensive information. Search until you have enough context.
+
+```bash
+python scripts/search.py "<keyword>" --domain <domain> [-n <max_results>]
+```
+
+**Recommended search order:**
+
+1. **UX** - Get best practices and anti-patterns for the local problem
+2. **Stack** - Get implementation-specific guidelines
+3. **Product** - Get product-type recommendations when no local pattern exists
+4. **Style** - Get detailed style guide only for new surfaces or redesigns
+5. **Typography** - Get font pairings when typography is in scope
+6. **Color** - Get color palette only when color system is in scope
+7. **Landing** - Get page structure if creating a landing page
+8. **Chart** - Get chart recommendations if building dashboard/analytics
+
+### Step 4: Stack Guidelines (Default: infer-from-project)
+
+If user doesn't specify a stack, infer it from the project or default to `html-tailwind`.
+
+```bash
+python scripts/search.py "<keyword>" --stack html-tailwind
+```
+
+Available stacks: `html-tailwind`, `react`, `nextjs`, `vue`, `svelte`, `swiftui`, `react-native`, `flutter`
 
 ---
 
@@ -106,26 +108,29 @@ and state model. Treat one-off visual overrides as the last resort.
 **AI should:**
 
 ```bash
-# 1. Search product type
+# 1. Existing product? Inspect local components/tokens first.
+# Brand-new landing page? Continue with external search.
+
+# 2. Search product type
 python scripts/search.py "beauty spa wellness service" --domain product
 
-# 2. Search style (based on industry: beauty, elegant)
+# 3. Search style (based on industry: beauty, elegant)
 python scripts/search.py "elegant minimal soft" --domain style
 
-# 3. Search typography
+# 4. Search typography
 python scripts/search.py "elegant luxury" --domain typography
 
-# 4. Search color palette
+# 5. Search color palette
 python scripts/search.py "beauty spa wellness" --domain color
 
-# 5. Search landing page structure
+# 6. Search landing page structure
 python scripts/search.py "hero-centric social-proof" --domain landing
 
-# 6. Search UX guidelines
+# 7. Search UX guidelines
 python scripts/search.py "animation" --domain ux
 python scripts/search.py "accessibility" --domain ux
 
-# 7. Search stack guidelines (default: html-tailwind)
+# 8. Search stack guidelines (default: html-tailwind)
 python scripts/search.py "layout responsive" --stack html-tailwind
 ```
 
