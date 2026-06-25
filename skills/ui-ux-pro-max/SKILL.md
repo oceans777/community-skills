@@ -20,6 +20,7 @@ Extract key information from user request:
 - **Style keywords**: minimal, playful, professional, elegant, dark mode, etc.
 - **Industry**: healthcare, fintech, gaming, education, etc.
 - **Stack**: React, Vue, Next.js, or default to `html-tailwind`
+- **Existing design system**: component libraries, tokens, form wrappers, layout primitives, and project-specific UI conventions already in the codebase
 
 ### Step 2: Search Relevant Domains
 
@@ -49,6 +50,22 @@ python scripts/search.py "<keyword>" --stack html-tailwind
 ```
 
 Available stacks: `html-tailwind`, `react`, `nextjs`, `vue`, `svelte`, `swiftui`, `react-native`, `flutter`
+
+### Step 4: Project Design System First
+
+When working inside an existing product, inspect and reuse the local design
+system before adding custom styles:
+
+1. Search for existing components, wrappers, tokens, variants, and nearby usage.
+2. Prefer component props, size variants, semantic tokens, and layout primitives.
+3. Add local CSS only when the design system cannot express the needed behavior.
+4. Keep custom CSS focused on layout constraints such as width, min-width, flex,
+   alignment, or responsive placement.
+5. Avoid overriding third-party internals, hard-coded colors, shadows, heights,
+   padding, font sizes, or line heights when a token or component prop exists.
+
+If matching a product screenshot, first identify the closest existing component
+and state model. Treat one-off visual overrides as the last resort.
 
 ---
 
@@ -165,6 +182,15 @@ These are frequently overlooked issues that make UI look unprofessional:
 | **Content clearance** | Add top padding equal to the fixed navbar height to keep content visible. |
 | **Consistent max-width** | Use a single container width (e.g., `max-w-6xl` or `max-w-7xl`) across sections. |
 
+### Existing Products
+
+| Rule | Enforce |
+|------|---------|
+| **Design system first** | Reuse existing components, wrappers, tokens, and variants before custom CSS. |
+| **Scoped overrides** | Keep unavoidable overrides local to the component or module being changed. |
+| **Token fidelity** | Prefer semantic color, spacing, radius, and typography tokens over raw values. |
+| **Screenshot matching** | Find the closest existing component and props before hand-tuning visual details. |
+
 ---
 
 ## Pre-Delivery Checklist
@@ -177,6 +203,7 @@ Before delivering UI code, verify these items:
 - [ ] Brand logos are correct (verified from Simple Icons)
 - [ ] Hover states don't cause layout shift
 - [ ] Use theme colors directly (bg-primary) not var() wrapper
+- [ ] Existing design system components and tokens are reused where available
 
 ### Interaction
 - [ ] All clickable elements have `cursor-pointer`
@@ -195,6 +222,7 @@ Before delivering UI code, verify these items:
 - [ ] No content hidden behind fixed navbars
 - [ ] Responsive at 320px, 768px, 1024px, 1440px
 - [ ] No horizontal scroll on mobile
+- [ ] Custom CSS is scoped and limited to gaps the design system cannot cover
 
 ### Accessibility
 - [ ] All images have alt text
