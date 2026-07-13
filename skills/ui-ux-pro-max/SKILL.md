@@ -13,6 +13,18 @@ Run the commands from the skill directory (`$CODEX_HOME/skills/ui-ux-pro-max`) s
 
 When user requests UI/UX work (design, build, create, implement, review, fix, improve), follow this workflow:
 
+Choose the smallest useful path:
+
+- **Focused fix**: For a small existing-component issue such as spacing, contrast, one interaction state, or responsive overflow, inspect the project design system first and search only one or two directly relevant domains.
+- **Full design**: For a new page, redesign, design system, landing page, or broad UX review, use the full workflow below.
+
+Treat search results as candidates, not mandates. Apply this priority order:
+
+1. Explicit user requirements
+2. The project's existing design system and component conventions
+3. Accessibility and platform guidance
+4. Search database recommendations
+
 ### Step 1: Analyze User Requirements
 
 Extract key information from user request:
@@ -23,7 +35,7 @@ Extract key information from user request:
 
 ### Step 2: Search Relevant Domains
 
-Use `search.py` multiple times to gather comprehensive information. Search until you have enough context.
+For full-design work, use `search.py` across the relevant domains until you have enough context. For focused fixes, run only the searches that can change the implementation.
 
 ```bash
 python scripts/search.py "<keyword>" --domain <domain> [-n <max_results>]
@@ -40,9 +52,9 @@ python scripts/search.py "<keyword>" --domain <domain> [-n <max_results>]
 7. **UX** - Get best practices and anti-patterns
 8. **Stack** - Get stack-specific guidelines (default: html-tailwind)
 
-### Step 3: Stack Guidelines (Default: infer-from-project)
+### Step 3: Stack Guidelines (infer from project first)
 
-If user doesn't specify a stack, infer it from the project or default to `html-tailwind`.
+If the user doesn't specify a stack, inspect the project and infer it. Default to `html-tailwind` only for a new standalone artifact with no existing stack.
 
 ```bash
 python scripts/search.py "<keyword>" --stack html-tailwind
@@ -129,13 +141,13 @@ python scripts/search.py "layout responsive" --stack html-tailwind
 
 ## Common Rules for Professional UI
 
-These are frequently overlooked issues that make UI look unprofessional:
+These are defaults for new UI. Existing product conventions and platform-native behavior take precedence.
 
 ### Icons & Visual Elements
 
 | Rule | Enforce |
 |------|---------|
-| **SVG icon sets** | Use SVG icons from a single set (Heroicons, Lucide, Simple Icons) for UI controls; reserve emojis for content only. |
+| **Consistent icon language** | Prefer the project's existing icon system. For a new web UI, use one coherent SVG set; reserve emojis for intentional content or brand expression. |
 | **Stable hover states** | Use color/opacity transitions on hover; keep layout dimensions fixed to prevent shift. |
 | **Correct brand logos** | Pull official SVGs from Simple Icons or brand sites; verify the latest mark before use. |
 | **Consistent icon sizing** | Standardize viewBox (24x24) and apply w-6 h-6 (or equivalent) across the set. |
@@ -144,9 +156,9 @@ These are frequently overlooked issues that make UI look unprofessional:
 
 | Rule | Enforce |
 |------|---------|
-| **Pointer cues** | Add `cursor-pointer` to all clickable/hoverable cards and elements. |
+| **Pointer cues** | Preserve native platform cursor behavior and add pointer cues to custom clickable surfaces when the project design system does not already handle them. |
 | **Hover feedback** | Provide clear visual feedback (color, shadow, border) on hover and focus. |
-| **Smooth transitions** | Use 150-300ms transitions (colors, opacity, shadow) to keep changes fluid. |
+| **Smooth transitions** | Use restrained motion appropriate to the platform and respect reduced-motion preferences; 150-300ms is a common web default, not a universal requirement. |
 
 ### Light/Dark Mode Contrast
 
@@ -172,14 +184,14 @@ These are frequently overlooked issues that make UI look unprofessional:
 Before delivering UI code, verify these items:
 
 ### Visual Quality
-- [ ] No emojis used as icons (use SVG instead)
-- [ ] All icons from consistent icon set (Heroicons/Lucide)
+- [ ] Icon treatment follows the project design system and user intent
+- [ ] New icon sets are internally consistent when the project has no existing set
 - [ ] Brand logos are correct (verified from Simple Icons)
 - [ ] Hover states don't cause layout shift
-- [ ] Use theme colors directly (bg-primary) not var() wrapper
+- [ ] Theme tokens are used through the project's established styling mechanism
 
 ### Interaction
-- [ ] All clickable elements have `cursor-pointer`
+- [ ] Custom clickable surfaces have appropriate pointer/focus cues for the target platform
 - [ ] Hover states provide clear visual feedback
 - [ ] Transitions are smooth (150-300ms)
 - [ ] Focus states visible for keyboard navigation
