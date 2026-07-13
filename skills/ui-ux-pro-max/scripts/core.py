@@ -9,10 +9,12 @@ import re
 from pathlib import Path
 from math import log
 from collections import defaultdict
+from functools import lru_cache
 
 # ============ CONFIGURATION ============
 DATA_DIR = Path(__file__).parent.parent / "data"
 MAX_RESULTS = 3
+MAX_RESULT_LIMIT = 20
 
 CSV_CONFIG = {
     "style": {
@@ -92,18 +94,22 @@ class BM25:
         self.N = 0
 
     def tokenize(self, text):
-        """Lowercase, split, remove punctuation, filter short words"""
+        """Lowercase and split while retaining meaningful UI/UX abbreviations."""
         text = re.sub(r'[^\w\s]', ' ', str(text).lower())
-        return [w for w in text.split() if len(w) > 2]
+        return [w for w in text.split() if len(w) > 1]
 
     def fit(self, documents):
         """Build BM25 index from documents"""
+        self.doc_lengths = []
+        self.avgdl = 0
+        self.idf = {}
+        self.doc_freqs = defaultdict(int)
         self.corpus = [self.tokenize(doc) for doc in documents]
         self.N = len(self.corpus)
         if self.N == 0:
             return
         self.doc_lengths = [len(doc) for doc in self.corpus]
-        self.avgdl = sum(self.doc_lengths) / self.N
+        self.avgdl = sum(self.doc_lengths) / self.N or 1.0
 
         for doc in self.corpus:
             seen = set()
@@ -141,10 +147,30 @@ class BM25:
 
 
 # ============ SEARCH FUNCTIONS ============
-def _load_csv(filepath):
+@lru_cache(maxsize=32)
+def _load_csv(filepath, mtime_ns):
     """Load CSV and return list of dicts"""
+    del mtime_ns  # Included in the cache key so on-disk updates invalidate data.
     with open(filepath, 'r', encoding='utf-8') as f:
-        return list(csv.DictReader(f))
+        return tuple(csv.DictReader(f))
+
+
+@lru_cache(maxsize=32)
+def _build_index(filepath, search_cols, mtime_ns):
+    """Load immutable source data and reuse its BM25 index in long-lived callers."""
+    data = _load_csv(filepath, mtime_ns)
+    documents = [" ".join(str(row.get(col, "")) for col in search_cols) for row in data]
+    bm25 = BM25()
+    bm25.fit(documents)
+    return data, bm25
+
+
+def _max_results_error(max_results):
+    if isinstance(max_results, bool) or not isinstance(max_results, int):
+        return f"max_results must be an integer from 1 to {MAX_RESULT_LIMIT}"
+    if not 1 <= max_results <= MAX_RESULT_LIMIT:
+        return f"max_results must be from 1 to {MAX_RESULT_LIMIT}"
+    return None
 
 
 def _search_csv(filepath, search_cols, output_cols, query, max_results):
@@ -152,14 +178,8 @@ def _search_csv(filepath, search_cols, output_cols, query, max_results):
     if not filepath.exists():
         return []
 
-    data = _load_csv(filepath)
-
-    # Build documents from search columns
-    documents = [" ".join(str(row.get(col, "")) for col in search_cols) for row in data]
-
-    # BM25 search
-    bm25 = BM25()
-    bm25.fit(documents)
+    mtime_ns = filepath.stat().st_mtime_ns
+    data, bm25 = _build_index(filepath, tuple(search_cols), mtime_ns)
     ranked = bm25.score(query)
 
     # Get top results with score > 0
@@ -187,17 +207,36 @@ def detect_domain(query):
         "typography": ["font", "typography", "heading", "serif", "sans"]
     }
 
-    scores = {domain: sum(1 for kw in keywords if kw in query_lower) for domain, keywords in domain_keywords.items()}
+    def contains_keyword(keyword):
+        if keyword == "#":
+            return "#" in query_lower
+        return re.search(
+            rf"(?<![a-z0-9]){re.escape(keyword)}(?![a-z0-9])",
+            query_lower,
+        ) is not None
+
+    scores = {
+        domain: sum(1 for keyword in keywords if contains_keyword(keyword))
+        for domain, keywords in domain_keywords.items()
+    }
     best = max(scores, key=scores.get)
     return best if scores[best] > 0 else "style"
 
 
 def search(query, domain=None, max_results=MAX_RESULTS):
     """Main search function with auto-domain detection"""
+    if not isinstance(query, str) or not query.strip():
+        return {"error": "query must be a non-empty string"}
+    max_results_error = _max_results_error(max_results)
+    if max_results_error:
+        return {"error": max_results_error, "query": query}
     if domain is None:
         domain = detect_domain(query)
 
-    config = CSV_CONFIG.get(domain, CSV_CONFIG["style"])
+    if domain not in CSV_CONFIG:
+        return {"error": f"Unknown domain: {domain}. Available: {', '.join(CSV_CONFIG)}"}
+
+    config = CSV_CONFIG[domain]
     filepath = DATA_DIR / config["file"]
 
     if not filepath.exists():
@@ -216,6 +255,11 @@ def search(query, domain=None, max_results=MAX_RESULTS):
 
 def search_stack(query, stack, max_results=MAX_RESULTS):
     """Search stack-specific guidelines"""
+    if not isinstance(query, str) or not query.strip():
+        return {"error": "query must be a non-empty string"}
+    max_results_error = _max_results_error(max_results)
+    if max_results_error:
+        return {"error": max_results_error, "query": query, "stack": stack}
     if stack not in STACK_CONFIG:
         return {"error": f"Unknown stack: {stack}. Available: {', '.join(AVAILABLE_STACKS)}"}
 

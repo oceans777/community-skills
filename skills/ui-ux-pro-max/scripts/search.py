@@ -9,7 +9,14 @@ Stacks: html-tailwind, react, nextjs
 """
 
 import argparse
-from core import CSV_CONFIG, AVAILABLE_STACKS, MAX_RESULTS, search, search_stack
+from core import (
+    CSV_CONFIG,
+    AVAILABLE_STACKS,
+    MAX_RESULTS,
+    MAX_RESULT_LIMIT,
+    search,
+    search_stack,
+)
 
 
 def format_output(result):
@@ -43,7 +50,15 @@ if __name__ == "__main__":
     parser.add_argument("query", help="Search query")
     parser.add_argument("--domain", "-d", choices=list(CSV_CONFIG.keys()), help="Search domain")
     parser.add_argument("--stack", "-s", choices=AVAILABLE_STACKS, help="Stack-specific search (html-tailwind, react, nextjs)")
-    parser.add_argument("--max-results", "-n", type=int, default=MAX_RESULTS, help="Max results (default: 3)")
+    parser.add_argument(
+        "--max-results",
+        "-n",
+        type=int,
+        choices=range(1, MAX_RESULT_LIMIT + 1),
+        default=MAX_RESULTS,
+        metavar=f"1..{MAX_RESULT_LIMIT}",
+        help=f"Max results from 1 to {MAX_RESULT_LIMIT} (default: {MAX_RESULTS})",
+    )
     parser.add_argument("--json", action="store_true", help="Output as JSON")
 
     args = parser.parse_args()
